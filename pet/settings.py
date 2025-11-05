@@ -16,9 +16,26 @@ import os
 # Security & debug
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "insecure-change-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
+
 ALLOWED_HOSTS = [
     h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",") if h.strip()
 ]
+
+_csrf = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+if _csrf:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(",") if o.strip()]
+
+# Reverse-proxy awareness
+USE_X_FORWARDED_HOST = os.getenv("USE_X_FORWARDED_HOST", "False").lower() == "true"
+
+_ssl_header = os.getenv("SECURE_PROXY_SSL_HEADER")
+if _ssl_header:
+    # env gives "HTTP_X_FORWARDED_PROTO,https"
+    h, v = [x.strip() for x in _ssl_header.split(",", 1)]
+    SECURE_PROXY_SSL_HEADER = (h, v)
+
+SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
+CSRF_COOKIE_SECURE = os.getenv("CSRF_COOKIE_SECURE", "False").lower() == "true"
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -167,6 +184,12 @@ ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 # ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+STATIC_URL = os.getenv("STATIC_URL", "/static/")
+STATIC_ROOT = os.getenv("STATIC_ROOT", os.path.join(BASE_DIR, "staticfiles"))
+
+MEDIA_URL = os.getenv("MEDIA_URL", "/media/")
+MEDIA_ROOT = os.getenv("MEDIA_ROOT", os.path.join(BASE_DIR, "media"))
 
 try:
     from .drf_settings import *
