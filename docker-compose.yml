@@ -2,16 +2,16 @@ version: "3.9"
 
 services:
   django:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: pet
+    image: pet:latest
+    container_name: pet_django_app
     restart: unless-stopped
     env_file: .env
     ports:
       - "8811:8000"
     networks:
       - core_net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 networks:
   core_net:
