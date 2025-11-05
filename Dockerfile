@@ -22,5 +22,5 @@ EXPOSE 8811
 
 CMD sh -c "python manage.py migrate --noinput \
     && python manage.py collectstatic --noinput \
-    && gunicorn myproject.asgi:application -k uvicorn.workers.UvicornWorker \
+    && gunicorn pet.asgi:application -k uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:8811 --workers 3 --timeout 60"
