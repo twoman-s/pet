@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     env_file: .env
     ports:
-      - "8811:8000"
+      - "8811:8811"
     networks:
       - core_net
     extra_hosts:
