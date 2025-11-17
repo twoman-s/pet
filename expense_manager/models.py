@@ -35,6 +35,9 @@ class Expense(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+    transaction_type = models.CharField(
+        max_length=10, blank=True, verbose_name="Transaction Type"
+    )
 
     class Meta:
         ordering = ["-transaction_date_time"]
