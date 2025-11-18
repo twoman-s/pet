@@ -27,6 +27,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
             "write_tags",  # write-only
             "created_at",
             "updated_at",
+            "transaction_type",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
