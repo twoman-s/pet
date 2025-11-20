@@ -140,55 +140,115 @@ class ExpenseViewSet(viewsets.ModelViewSet):
 
     # ------- Filter by Date Range -------
     @action(detail=False, methods=["get"], url_path="filter_by_date_range")
-    def filter_by_date_range(self, request):
+    def filter_by_date_range_and_tags(self, request):
         """
-        Filter expenses between two dates (inclusive).
-        Query parameters: start_date (YYYY-MM-DD), end_date (YYYY-MM-DD)
-        Example: /api/v1/expenses/filter_by_date_range/?start_date=2025-01-01&end_date=2025-11-30
+        Filter expenses by date range and/or tags.
+        Query parameters:
+            - start_date (YYYY-MM-DD) - If provided, end_date is mandatory
+            - end_date (YYYY-MM-DD) - If provided, start_date is mandatory
+            - tags (comma-separated tag IDs) - Optional, can be used independently or with dates
+        Logic:
+            - If start_date or end_date is provided, BOTH are required
+            - If only tags are provided, filter by tags (date range optional)
+            - If all three are provided, filter by all criteria
+            - At least one filter must be provided
+        Examples:
+            - By tags only: /api/v1/expenses/filter_by_date_range/?tags=1,2,3
+            - By date range only: /api/v1/expenses/filter_by_date_range/?start_date=2025-01-01&end_date=2025-11-30
+            - By both: /api/v1/expenses/filter_by_date_range/?start_date=2025-01-01&end_date=2025-11-30&tags=1,2,3
         """
         start_date_str = request.query_params.get("start_date")
         end_date_str = request.query_params.get("end_date")
+        tags_param = request.query_params.get("tags")
 
-        # Validate parameters exist
-        if not start_date_str or not end_date_str:
+        # Check if any filter is provided
+        date_provided = bool(start_date_str or end_date_str)
+
+        # If any date is provided, both dates are required
+        if date_provided and not (start_date_str and end_date_str):
             return Response(
-                {"detail": "start_date and end_date parameters are required."},
+                {"detail": "If start_date or end_date is provided, both are required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Parse dates
-        try:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-        except ValueError:
+        # At least one filter (dates or tags) must be provided
+        if not date_provided and not tags_param:
             return Response(
-                {"detail": "Dates must be in YYYY-MM-DD format."},
+                {
+                    "detail": "At least one filter is required: either date range (start_date and end_date) or tags."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Validate date range
-        if start_date > end_date:
-            return Response(
-                {"detail": "start_date must be before or equal to end_date."},
-                status=status.HTTP_400_BAD_REQUEST,
+        expenses = self.get_queryset()
+
+        # Parse and validate dates if provided
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return Response(
+                    {"detail": "Dates must be in YYYY-MM-DD format."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate date range
+            if start_date > end_date:
+                return Response(
+                    {"detail": "start_date must be before or equal to end_date."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Apply date filter
+            expenses = expenses.filter(
+                date__gte=start_date,
+                date__lte=end_date,
             )
 
-        # Filter expenses within the date range
-        expenses = self.get_queryset().filter(
-            date__gte=start_date,
-            date__lte=end_date,
-        )
+        # Parse and validate tags if provided
+        tag_ids = []
+        if tags_param:
+            try:
+                tag_ids = [
+                    int(tag_id.strip())
+                    for tag_id in tags_param.split(",")
+                    if tag_id.strip()
+                ]
+            except ValueError:
+                return Response(
+                    {"detail": "tags must be comma-separated integers."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate at least one tag ID
+            if not tag_ids:
+                return Response(
+                    {"detail": "At least one tag ID is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Apply tag filter
+            expenses = expenses.filter(tags__id__in=tag_ids)
+
+        # Remove duplicates if both filters are applied
+        expenses = expenses.distinct()
 
         serializer = self.get_serializer(expenses, many=True)
-        return Response(
-            {
-                "start_date": start_date_str,
-                "end_date": end_date_str,
-                "count": expenses.count(),
-                "results": serializer.data,
-            },
-            status=status.HTTP_200_OK,
-        )
+
+        response_data = {
+            "count": expenses.count(),
+            "results": serializer.data,
+        }
+
+        # Include applied filters in response
+        if start_date_str and end_date_str:
+            response_data["start_date"] = start_date_str
+            response_data["end_date"] = end_date_str
+        if tags_param:
+            response_data["tags"] = tag_ids
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
     # ------- Filter by Tags -------
     @action(detail=False, methods=["get"], url_path="filter_by_tags")
