@@ -14,12 +14,45 @@ class Tag(models.Model):
         return self.tag_name
 
 
+class BankAccount(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="bank_accounts",
+        verbose_name="User",
+    )
+    name = models.CharField(max_length=255, verbose_name="Account Name")
+    balance = models.BigIntegerField(null=True, blank=True, verbose_name="Balance")
+    ifsc_code = models.CharField(
+        max_length=11, null=True, blank=True, verbose_name="IFSC Code"
+    )
+    account_number = models.CharField(
+        max_length=20, null=True, blank=True, verbose_name="Account Number"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Bank Account"
+        verbose_name_plural = "Bank Accounts"
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} - {self.account_number}"
+
+
 class Expense(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="expenses",
         verbose_name="User",
+    )
+    bank_account = models.ForeignKey(
+        BankAccount,
+        on_delete=models.CASCADE,
+        related_name="expenses",
+        verbose_name="Bank Account",
     )
     amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Amount")
     date = models.DateField(verbose_name="Transaction Date")

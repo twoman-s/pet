@@ -28,6 +28,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "transaction_type",
+            "bank_account",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
