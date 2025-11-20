@@ -189,3 +189,53 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    # ------- Filter by Tags -------
+    @action(detail=False, methods=["get"], url_path="filter_by_tags")
+    def filter_by_tags(self, request):
+        """
+        Filter expenses by tag IDs.
+        Query parameters: tags (comma-separated tag IDs)
+        Example: /api/v1/expenses/filter_by_tags/?tags=1,2,3
+        """
+        tags_param = request.query_params.get("tags")
+
+        # Validate parameter exists
+        if not tags_param:
+            return Response(
+                {"detail": "tags parameter is required (comma-separated tag IDs)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Parse tag IDs
+        try:
+            tag_ids = [
+                int(tag_id.strip())
+                for tag_id in tags_param.split(",")
+                if tag_id.strip()
+            ]
+        except ValueError:
+            return Response(
+                {"detail": "tags must be comma-separated integers."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate at least one tag ID
+        if not tag_ids:
+            return Response(
+                {"detail": "At least one tag ID is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Filter expenses that have any of the specified tags
+        expenses = self.get_queryset().filter(tags__id__in=tag_ids).distinct()
+
+        serializer = self.get_serializer(expenses, many=True)
+        return Response(
+            {
+                "tags": tag_ids,
+                "count": expenses.count(),
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
