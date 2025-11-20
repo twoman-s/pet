@@ -48,7 +48,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
     # ---------- representation ----------
     def get_tags(self, obj):
         # ensure we iterate a queryset, not the manager
-        return list(obj.tags.all().values_list("tag_name", flat=True))
+        return list(obj.tags.all().values_list("id", flat=True))
 
     # ---------- create / update ----------
     def create(self, validated_data):
