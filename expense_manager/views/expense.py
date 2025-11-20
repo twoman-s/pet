@@ -139,7 +139,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         )
 
     # ------- Filter by Date Range -------
-    @action(detail=False, methods=["get"], url_path="filter_by_date_range")
+    @action(detail=False, methods=["get"], url_path="filter_by_date_range_and_tags")
     def filter_by_date_range_and_tags(self, request):
         """
         Filter expenses by date range and/or tags.
@@ -153,9 +153,9 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             - If all three are provided, filter by all criteria
             - At least one filter must be provided
         Examples:
-            - By tags only: /api/v1/expenses/filter_by_date_range/?tags=1,2,3
-            - By date range only: /api/v1/expenses/filter_by_date_range/?start_date=2025-01-01&end_date=2025-11-30
-            - By both: /api/v1/expenses/filter_by_date_range/?start_date=2025-01-01&end_date=2025-11-30&tags=1,2,3
+            - By tags only: /api/v1/expenses/filter_by_date_range_and_tags/?tags=1,2,3
+            - By date range only: /api/v1/expenses/filter_by_date_range_and_tags/?start_date=2025-01-01&end_date=2025-11-30
+            - By both: /api/v1/expenses/filter_by_date_range_and_tags/?start_date=2025-01-01&end_date=2025-11-30&tags=1,2,3
         """
         start_date_str = request.query_params.get("start_date")
         end_date_str = request.query_params.get("end_date")
