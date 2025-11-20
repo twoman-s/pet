@@ -22,7 +22,7 @@ class BankAccount(models.Model):
         verbose_name="User",
     )
     name = models.CharField(max_length=255, verbose_name="Account Name")
-    balance = models.BigIntegerField(null=True, blank=True, verbose_name="Balance")
+    balance = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True, verbose_name="Balance")
     ifsc_code = models.CharField(
         max_length=11, null=True, blank=True, verbose_name="IFSC Code"
     )
