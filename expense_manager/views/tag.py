@@ -17,4 +17,11 @@ class TagViewSet(viewsets.ModelViewSet):
         # Override list to return all tags without pagination
         queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response(
+            {
+                "count": queryset.count(),
+                "next": null,
+                "previous": null,
+                "results": serializer.data,
+            }
+        )
