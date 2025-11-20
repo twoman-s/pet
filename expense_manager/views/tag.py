@@ -11,14 +11,10 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all().order_by("tag_name")
     serializer_class = TAG_SERIALIZER.TagSerializer
     permission_classes = [permissions.IsAuthenticated]
-
-    def get_paginated_response(self, data):
-        # Override pagination for list view
-        if self.action == "list":
-            return Response(data)
-        return super().get_paginated_response(data)
+    pagination_class = None  # Disable pagination for this viewset
 
     def list(self, request, *args, **kwargs):
-        # Disable pagination for list view
-        self.paginator = None
-        return super().list(request, *args, **kwargs)
+        # Override list to return all tags without pagination
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
