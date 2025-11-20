@@ -5,36 +5,102 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def create_dummy_account(apps, schema_editor):
+    BankAccount = apps.get_model("expense_manager", "BankAccount")
+    User = apps.get_model("auth", "User")
+
+    # Create dummy account for user with id 2
+    try:
+        user = User.objects.get(id=2)
+        BankAccount.objects.create(
+            user=user,
+            name="Dummy Account",
+            balance=None,
+            ifsc_code=None,
+            account_number=None,
+        )
+    except User.DoesNotExist:
+        # If user 2 doesn't exist, skip
+        pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('expense_manager', '0002_expense_transaction_type'),
+        ("expense_manager", "0002_expense_transaction_type"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='BankAccount',
+            name="BankAccount",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255, verbose_name='Account Name')),
-                ('balance', models.BigIntegerField(blank=True, null=True, verbose_name='Balance')),
-                ('ifsc_code', models.CharField(blank=True, max_length=11, null=True, verbose_name='IFSC Code')),
-                ('account_number', models.CharField(blank=True, max_length=20, null=True, verbose_name='Account Number')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Created At')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Updated At')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='bank_accounts', to=settings.AUTH_USER_MODEL, verbose_name='User')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255, verbose_name="Account Name")),
+                (
+                    "balance",
+                    models.BigIntegerField(
+                        blank=True, null=True, verbose_name="Balance"
+                    ),
+                ),
+                (
+                    "ifsc_code",
+                    models.CharField(
+                        blank=True, max_length=11, null=True, verbose_name="IFSC Code"
+                    ),
+                ),
+                (
+                    "account_number",
+                    models.CharField(
+                        blank=True,
+                        max_length=20,
+                        null=True,
+                        verbose_name="Account Number",
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Created At"),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(auto_now=True, verbose_name="Updated At"),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="bank_accounts",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="User",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Bank Account',
-                'verbose_name_plural': 'Bank Accounts',
-                'ordering': ['name'],
+                "verbose_name": "Bank Account",
+                "verbose_name_plural": "Bank Accounts",
+                "ordering": ["name"],
             },
         ),
+        migrations.RunPython(create_dummy_account),
         migrations.AddField(
-            model_name='expense',
-            name='bank_account',
-            field=models.ForeignKey(default=0, on_delete=django.db.models.deletion.CASCADE, related_name='expenses', to='expense_manager.bankaccount', verbose_name='Bank Account'),
+            model_name="expense",
+            name="bank_account",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="expenses",
+                to="expense_manager.bankaccount",
+                verbose_name="Bank Account",
+            ),
             preserve_default=False,
         ),
     ]
