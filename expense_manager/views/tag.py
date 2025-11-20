@@ -18,10 +18,10 @@ class TagViewSet(viewsets.ModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, many=True)
         return Response(
-            {
+            data={
                 "count": queryset.count(),
-                "next": null,
-                "previous": null,
+                "next": None,
+                "previous": None,
                 "results": serializer.data,
             }
         )
