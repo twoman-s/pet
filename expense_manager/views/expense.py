@@ -22,8 +22,116 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Expense.objects.filter(user=self.request.user)
 
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Save the expense with the authenticated user
+        expense = serializer.save(user=request.user)
+
+        # Adjust bank account balance
+        bank_account = expense.bank_account
+        amount = expense.amount
+        transaction_type = expense.transaction_type
+
+        if transaction_type == "Debit":
+            bank_account.balance = (bank_account.balance or 0) - amount
+        elif transaction_type == "Credit":
+            bank_account.balance = (bank_account.balance or 0) + amount
+
+        bank_account.save()
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        # Store original values
+        original_amount = instance.amount
+        original_transaction_type = instance.transaction_type
+        original_bank_account = instance.bank_account
+
+        # Apply updates
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        expense = serializer.save()
+
+        # Get new values
+        new_amount = expense.amount
+        new_transaction_type = expense.transaction_type
+        new_bank_account = expense.bank_account
+
+        # Check if bank account changed
+        if original_bank_account.id == new_bank_account.id:
+            # Case A: Same bank account - reverse original and apply new
+            bank_account = original_bank_account
+
+            # Reverse original effect
+            if original_transaction_type == "Debit":
+                bank_account.balance = (bank_account.balance or 0) + original_amount
+            elif original_transaction_type == "Credit":
+                bank_account.balance = (bank_account.balance or 0) - original_amount
+
+            # Apply new effect
+            if new_transaction_type == "Debit":
+                bank_account.balance = (bank_account.balance or 0) - new_amount
+            elif new_transaction_type == "Credit":
+                bank_account.balance = (bank_account.balance or 0) + new_amount
+
+            bank_account.save()
+        else:
+            # Case B: Bank account changed - reverse on old, apply on new
+            # Reverse on original bank account
+            if original_transaction_type == "Debit":
+                original_bank_account.balance = (
+                    original_bank_account.balance or 0
+                ) + original_amount
+            elif original_transaction_type == "Credit":
+                original_bank_account.balance = (
+                    original_bank_account.balance or 0
+                ) - original_amount
+            original_bank_account.save()
+
+            # Apply on new bank account
+            if new_transaction_type == "Debit":
+                new_bank_account.balance = (new_bank_account.balance or 0) - new_amount
+            elif new_transaction_type == "Credit":
+                new_bank_account.balance = (new_bank_account.balance or 0) + new_amount
+            new_bank_account.save()
+
+        return Response(serializer.data)
+
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Store values before deletion
+        bank_account = instance.bank_account
+        amount = instance.amount
+        transaction_type = instance.transaction_type
+
+        # Reverse the transaction effect on balance
+        if transaction_type == "Debit":
+            bank_account.balance = (bank_account.balance or 0) + amount
+        elif transaction_type == "Credit":
+            bank_account.balance = (bank_account.balance or 0) - amount
+
+        bank_account.save()
+
+        # Delete the expense
+        instance.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def perform_create(self, serializer):
-        # Ensure the expense is attributed to the logged-in user
+        # This method is no longer used since we override create()
+        # Keeping it for backward compatibility if needed
         serializer.save(user=self.request.user)
 
     # ------- Bulk Create -------

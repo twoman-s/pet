@@ -3,7 +3,7 @@ from expense_manager.models import Expense, Tag
 from utils.common_serializer import DynamicFieldsModelSerializer
 
 
-class ExpenseSerializer(serializers.ModelSerializer):
+class ExpenseSerializer(DynamicFieldsModelSerializer):
     # READ: show tags as list of tag names
     tags = serializers.SerializerMethodField(read_only=True)
 
