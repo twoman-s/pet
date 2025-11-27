@@ -250,24 +250,27 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="filter_by_date_range_and_tags")
     def filter_by_date_range_and_tags(self, request):
         """
-        Filter expenses by date range and/or tags.
+        Filter expenses by date range, tags, and/or bank account.
         Query parameters:
             - start_date (YYYY-MM-DD) - If provided, end_date is mandatory
             - end_date (YYYY-MM-DD) - If provided, start_date is mandatory
             - tags (comma-separated tag IDs) - Optional, can be used independently or with dates
+            - bank_account (integer) - Optional, bank account ID to filter by
         Logic:
             - If start_date or end_date is provided, BOTH are required
             - If only tags are provided, filter by tags (date range optional)
-            - If all three are provided, filter by all criteria
+            - If bank_account is provided, filter by that bank account
             - At least one filter must be provided
         Examples:
             - By tags only: /api/v1/expenses/filter_by_date_range_and_tags/?tags=1,2,3
             - By date range only: /api/v1/expenses/filter_by_date_range_and_tags/?start_date=2025-01-01&end_date=2025-11-30
-            - By both: /api/v1/expenses/filter_by_date_range_and_tags/?start_date=2025-01-01&end_date=2025-11-30&tags=1,2,3
+            - By bank account only: /api/v1/expenses/filter_by_date_range_and_tags/?bank_account=5
+            - All combined: /api/v1/expenses/filter_by_date_range_and_tags/?start_date=2025-01-01&end_date=2025-11-30&tags=1,2,3&bank_account=5
         """
         start_date_str = request.query_params.get("start_date")
         end_date_str = request.query_params.get("end_date")
         tags_param = request.query_params.get("tags")
+        bank_account_param = request.query_params.get("bank_account")
 
         # Check if any filter is provided
         date_provided = bool(start_date_str or end_date_str)
@@ -279,11 +282,11 @@ class ExpenseViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # At least one filter (dates or tags) must be provided
-        if not date_provided and not tags_param:
+        # At least one filter must be provided
+        if not date_provided and not tags_param and not bank_account_param:
             return Response(
                 {
-                    "detail": "At least one filter is required: either date range (start_date and end_date) or tags."
+                    "detail": "At least one filter is required: date range (start_date and end_date), tags, or bank_account."
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -339,6 +342,20 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             # Apply tag filter
             expenses = expenses.filter(tags__id__in=tag_ids)
 
+        # Parse and validate bank account if provided
+        bank_account_id = None
+        if bank_account_param:
+            try:
+                bank_account_id = int(bank_account_param)
+            except ValueError:
+                return Response(
+                    {"detail": "bank_account must be an integer."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Apply bank account filter
+            expenses = expenses.filter(bank_account_id=bank_account_id)
+
         # Remove duplicates if both filters are applied
         expenses = expenses.distinct()
 
@@ -355,6 +372,8 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             response_data["end_date"] = end_date_str
         if tags_param:
             response_data["tags"] = tag_ids
+        if bank_account_param:
+            response_data["bank_account"] = bank_account_id
 
         return Response(response_data, status=status.HTTP_200_OK)
 
