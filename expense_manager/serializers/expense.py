@@ -33,7 +33,7 @@ class ExpenseSerializer(DynamicFieldsModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
     # ---------- helpers ----------
-    def _get_or_create_tags(self, tag_names):
+    def _get_or_create_tags(self, tag_names, user):
         if not tag_names:
             return []
         norm = []
@@ -43,8 +43,12 @@ class ExpenseSerializer(DynamicFieldsModelSerializer):
             if n and n not in seen:
                 seen.add(n)
                 norm.append(n)
-        existing = {t.tag_name: t for t in Tag.objects.filter(tag_name__in=norm)}
-        return [existing.get(n) or Tag.objects.create(tag_name=n) for n in norm]
+        existing = {
+            t.tag_name: t for t in Tag.objects.filter(tag_name__in=norm, user=user)
+        }
+        return [
+            existing.get(n) or Tag.objects.create(tag_name=n, user=user) for n in norm
+        ]
 
     # ---------- representation ----------
     def get_tags(self, obj):
@@ -56,7 +60,8 @@ class ExpenseSerializer(DynamicFieldsModelSerializer):
         tag_names = validated_data.pop("write_tags", [])
         expense = Expense.objects.create(**validated_data)
         if tag_names:
-            expense.tags.set(self._get_or_create_tags(tag_names))
+            user = expense.user
+            expense.tags.set(self._get_or_create_tags(tag_names, user))
         return expense
 
     def update(self, instance, validated_data):
@@ -65,5 +70,6 @@ class ExpenseSerializer(DynamicFieldsModelSerializer):
             setattr(instance, k, v)
         instance.save()
         if tag_names is not None:
-            instance.tags.set(self._get_or_create_tags(tag_names))
+            user = instance.user
+            instance.tags.set(self._get_or_create_tags(tag_names, user))
         return instance

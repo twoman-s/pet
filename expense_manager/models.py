@@ -3,12 +3,19 @@ from django.conf import settings
 
 
 class Tag(models.Model):
-    tag_name = models.CharField(max_length=50, unique=True, verbose_name="Tag Name")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="tags",
+        verbose_name="User",
+    )
+    tag_name = models.CharField(max_length=50, verbose_name="Tag Name")
 
     class Meta:
         verbose_name = "Tag"
         verbose_name_plural = "Tags"
         ordering = ["tag_name"]
+        unique_together = ["user", "tag_name"]  # Unique tag name per user
 
     def __str__(self):
         return self.tag_name
@@ -22,7 +29,9 @@ class BankAccount(models.Model):
         verbose_name="User",
     )
     name = models.CharField(max_length=255, verbose_name="Account Name")
-    balance = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True, verbose_name="Balance")
+    balance = models.DecimalField(
+        max_digits=12, decimal_places=3, null=True, blank=True, verbose_name="Balance"
+    )
     ifsc_code = models.CharField(
         max_length=11, null=True, blank=True, verbose_name="IFSC Code"
     )

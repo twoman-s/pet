@@ -154,7 +154,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
                 tag_names = item.pop("tags", [])
                 exp = Expense.objects.create(user=request.user, **item)
                 if tag_names:
-                    tags = serializer._get_or_create_tags(tag_names)
+                    tags = serializer._get_or_create_tags(tag_names, request.user)
                     exp.tags.set(tags)
                 created_instances.append(exp)
 

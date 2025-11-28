@@ -8,10 +8,17 @@ from expense_manager.serializers import TAG_SERIALIZER
 
 
 class TagViewSet(viewsets.ModelViewSet):
-    queryset = Tag.objects.all().order_by("tag_name")
     serializer_class = TAG_SERIALIZER.TagSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = None  # Disable pagination for this viewset
+
+    def get_queryset(self):
+        # Return only tags belonging to the authenticated user
+        return Tag.objects.filter(user=self.request.user).order_by("tag_name")
+
+    def perform_create(self, serializer):
+        # Automatically set the user to the logged-in user
+        serializer.save(user=self.request.user)
 
     def list(self, request, *args, **kwargs):
         # Override list to return all tags without pagination
