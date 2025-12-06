@@ -250,27 +250,31 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="filter_by_date_range_and_tags")
     def filter_by_date_range_and_tags(self, request):
         """
-        Filter expenses by date range, tags, and/or bank account.
+        Filter expenses by date range, tags, bank account, and/or items.
         Query parameters:
             - start_date (YYYY-MM-DD) - If provided, end_date is mandatory
             - end_date (YYYY-MM-DD) - If provided, start_date is mandatory
             - tags (comma-separated tag IDs) - Optional, can be used independently or with dates
             - bank_account (integer) - Optional, bank account ID to filter by
+            - items (comma-separated item IDs) - Optional, filter by item IDs
         Logic:
             - If start_date or end_date is provided, BOTH are required
             - If only tags are provided, filter by tags (date range optional)
             - If bank_account is provided, filter by that bank account
+            - If items are provided, filter by item IDs
             - At least one filter must be provided
         Examples:
             - By tags only: /api/v1/expenses/filter_by_date_range_and_tags/?tags=1,2,3
             - By date range only: /api/v1/expenses/filter_by_date_range_and_tags/?start_date=2025-01-01&end_date=2025-11-30
             - By bank account only: /api/v1/expenses/filter_by_date_range_and_tags/?bank_account=5
-            - All combined: /api/v1/expenses/filter_by_date_range_and_tags/?start_date=2025-01-01&end_date=2025-11-30&tags=1,2,3&bank_account=5
+            - By items only: /api/v1/expenses/filter_by_date_range_and_tags/?items=1,2,3
+            - All combined: /api/v1/expenses/filter_by_date_range_and_tags/?start_date=2025-01-01&end_date=2025-11-30&tags=1,2,3&bank_account=5&items=1,2
         """
         start_date_str = request.query_params.get("start_date")
         end_date_str = request.query_params.get("end_date")
         tags_param = request.query_params.get("tags")
         bank_account_param = request.query_params.get("bank_account")
+        items_param = request.query_params.get("items")
 
         # Check if any filter is provided
         date_provided = bool(start_date_str or end_date_str)
@@ -283,10 +287,15 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             )
 
         # At least one filter must be provided
-        if not date_provided and not tags_param and not bank_account_param:
+        if (
+            not date_provided
+            and not tags_param
+            and not bank_account_param
+            and not items_param
+        ):
             return Response(
                 {
-                    "detail": "At least one filter is required: date range (start_date and end_date), tags, or bank_account."
+                    "detail": "At least one filter is required: date range (start_date and end_date), tags, bank_account, or items."
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -356,7 +365,32 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             # Apply bank account filter
             expenses = expenses.filter(bank_account_id=bank_account_id)
 
-        # Remove duplicates if both filters are applied
+        # Parse and validate items if provided
+        item_ids = []
+        if items_param:
+            try:
+                item_ids = [
+                    int(item_id.strip())
+                    for item_id in items_param.split(",")
+                    if item_id.strip()
+                ]
+            except ValueError:
+                return Response(
+                    {"detail": "items must be comma-separated integers."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate at least one item ID
+            if not item_ids:
+                return Response(
+                    {"detail": "At least one item ID is required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Apply item filter
+            expenses = expenses.filter(expense_items__item_id__in=item_ids)
+
+        # Remove duplicates if multiple filters are applied
         expenses = expenses.distinct()
 
         serializer = self.get_serializer(expenses, many=True)
@@ -374,6 +408,8 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             response_data["tags"] = tag_ids
         if bank_account_param:
             response_data["bank_account"] = bank_account_id
+        if items_param:
+            response_data["items"] = item_ids
 
         return Response(response_data, status=status.HTTP_200_OK)
 
