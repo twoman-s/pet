@@ -8,6 +8,7 @@ from expense_manager.serializers import ITEM_SERIALIZER
 class ItemViewSet(viewsets.ModelViewSet):
     serializer_class = ITEM_SERIALIZER.ItemSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         return Item.objects.filter(user=self.request.user)
