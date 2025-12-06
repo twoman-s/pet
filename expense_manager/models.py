@@ -50,6 +50,30 @@ class BankAccount(models.Model):
         return f"{self.name} - {self.account_number}"
 
 
+class Item(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="items",
+        verbose_name="User",
+    )
+    name = models.CharField(max_length=255, verbose_name="Item Name")
+
+    class Meta:
+        verbose_name = "Item"
+        verbose_name_plural = "Items"
+        ordering = ["name"]
+        unique_together = ["user", "name"]
+
+    def save(self, *args, **kwargs):
+        # Always store name in lowercase
+        self.name = self.name.lower()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
 class Expense(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -88,3 +112,26 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.amount} {self.currency} on {self.date}"
+
+
+class ExpenseItem(models.Model):
+    expense = models.ForeignKey(
+        Expense,
+        on_delete=models.CASCADE,
+        related_name="expense_items",
+        verbose_name="Expense",
+    )
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.CASCADE,
+        related_name="expense_items",
+        verbose_name="Item",
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Amount")
+
+    class Meta:
+        verbose_name = "Expense Item"
+        verbose_name_plural = "Expense Items"
+
+    def __str__(self):
+        return f"{self.expense.id} - {self.item.name} - {self.amount}"
