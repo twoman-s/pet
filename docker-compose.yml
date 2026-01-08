@@ -8,10 +8,17 @@ services:
     env_file: .env
     ports:
       - "8811:8811"
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     networks:
       - core_net
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+volumes:
+  static_volume:
+  media_volume:
 
 networks:
   core_net:
