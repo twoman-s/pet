@@ -53,6 +53,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Application definition
 
 INSTALLED_APPS = [
+    "unfold",  # before django.contrib.admin
+    "unfold.contrib.filters",  # optional, if special filters are needed
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -101,6 +103,97 @@ TEMPLATES = [
         },
     },
 ]
+
+# Unfold Admin Configuration
+UNFOLD = {
+    "SITE_TITLE": "Pet Expense Manager",
+    "SITE_HEADER": "Pet Admin",
+    "SITE_URL": "/",
+    "SITE_ICON": None,  # Path to site icon or None
+    "SITE_LOGO": None,  # Path to site logo or None
+    "SITE_SYMBOL": "📊",  # Icon displayed in sidebar
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "ENVIRONMENT": "pet.utils.environment_callback",
+    "COLORS": {
+        "primary": {
+            "50": "250 245 255",
+            "100": "243 232 255",
+            "200": "233 213 255",
+            "300": "216 180 254",
+            "400": "192 132 252",
+            "500": "168 85 247",
+            "600": "147 51 234",
+            "700": "126 34 206",
+            "800": "107 33 168",
+            "900": "88 28 135",
+        },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": "Navigation",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Dashboard",
+                        "icon": "dashboard",
+                        "link": "/admin/",
+                    },
+                ],
+            },
+            {
+                "title": "Expense Management",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Expenses",
+                        "icon": "account_balance_wallet",
+                        "link": "/admin/expense_manager/expense/",
+                    },
+                    {
+                        "title": "Tags",
+                        "icon": "label",
+                        "link": "/admin/expense_manager/tag/",
+                    },
+                    {
+                        "title": "Bank Accounts",
+                        "icon": "account_balance",
+                        "link": "/admin/expense_manager/bankaccount/",
+                    },
+                    {
+                        "title": "Items",
+                        "icon": "inventory_2",
+                        "link": "/admin/expense_manager/item/",
+                    },
+                    {
+                        "title": "Currencies",
+                        "icon": "currency_exchange",
+                        "link": "/admin/expense_manager/currency/",
+                    },
+                ],
+            },
+            {
+                "title": "User Management",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Users",
+                        "icon": "people",
+                        "link": "/admin/auth/user/",
+                    },
+                    {
+                        "title": "Groups",
+                        "icon": "group",
+                        "link": "/admin/auth/group/",
+                    },
+                ],
+            },
+        ],
+    },
+}
 
 WSGI_APPLICATION = "pet.wsgi.application"
 

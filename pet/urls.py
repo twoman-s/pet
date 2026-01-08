@@ -9,6 +9,11 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+# Customize admin site headers
+admin.site.site_header = "Pet Expense Manager Admin"
+admin.site.site_title = "Pet Admin"
+admin.site.index_title = "Welcome to Pet Expense Manager"
+
 
 urlpatterns = [
     # Admin
