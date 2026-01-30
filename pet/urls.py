@@ -23,9 +23,11 @@ urlpatterns = [
     # Expense Manager API (tags + expenses)
     path("api/v1/", include("expense_manager.urls")),
     path("api/v1/", include("authentication.urls")),
-    # JWT Auth (optional, for API clients)
-    # path("api/auth/jwt/create/", TokenObtainPairView.as_view(), name="jwt_obtain_pair"),
-    # path("api/auth/jwt/refresh/", TokenRefreshView.as_view(), name="jwt_refresh"),
+    # JWT Auth (for API clients)
+    # path("api/v1/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path(
+        "api/v1/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"
+    ),
     # API Schema & Docs
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

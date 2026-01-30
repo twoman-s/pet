@@ -287,10 +287,10 @@ MEDIA_ROOT = os.getenv("MEDIA_ROOT", os.path.join(BASE_DIR, "media"))
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=30),  # Set access token expiry time
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=20),  # Set refresh token expiry time
-    "ROTATE_REFRESH_TOKENS": False,
-    "BLACKLIST_AFTER_ROTATION": True,
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=10),  # Short-lived access token
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=20),  # Longer-lived refresh token
+    "ROTATE_REFRESH_TOKENS": True,  # Issue new refresh token on each refresh
+    "BLACKLIST_AFTER_ROTATION": True,  # Blacklist old refresh tokens
 }
 
 try:
